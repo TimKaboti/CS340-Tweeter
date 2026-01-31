@@ -9,6 +9,8 @@ import { AuthToken, FakeData, User } from "tweeter-shared";
 import { ToastActionsContext } from "../../toaster/ToastContexts";
 import { Buffer } from "buffer";
 import { ToastType } from "../../toaster/Toast";
+import AuthenticationFields from "../AuthenticationFields";
+
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -132,78 +134,65 @@ const Register = () => {
   };
 
   const inputFieldFactory = () => {
-    return (
-      <>
-        <div className="form-floating">
-          <input
-            type="text"
-            className="form-control"
-            size={50}
-            id="firstNameInput"
-            placeholder="First Name"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setFirstName(event.target.value)}
-          />
-          <label htmlFor="firstNameInput">First Name</label>
-        </div>
-        <div className="form-floating">
-          <input
-            type="text"
-            className="form-control"
-            size={50}
-            id="lastNameInput"
-            placeholder="Last Name"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setLastName(event.target.value)}
-          />
-          <label htmlFor="lastNameInput">Last Name</label>
-        </div>
-        <div className="form-floating">
-          <input
-            type="text"
-            className="form-control"
-            size={50}
-            id="aliasInput"
-            placeholder="name@example.com"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setAlias(event.target.value)}
-          />
-          <label htmlFor="aliasInput">Alias</label>
-        </div>
-        <div className="form-floating">
-          <input
-            type="password"
-            className="form-control"
-            id="passwordInput"
-            placeholder="Password"
-            onKeyDown={registerOnEnter}
-            onChange={(event) => setPassword(event.target.value)}
-          />
-          <label htmlFor="passwordInput">Password</label>
-        </div>
-        <div className="form-floating mb-3">
-          <input
-            type="file"
-            className="d-inline-block py-5 px-4 form-control bottom"
-            id="imageFileInput"
-            onKeyDown={registerOnEnter}
-            onChange={handleFileChange}
-          />
-          {imageUrl.length > 0 && (
-            <>
-              <label htmlFor="imageFileInput">User Image</label>
-              <img src={imageUrl} className="img-thumbnail" alt=""></img>
-            </>
-          )}
-        </div>
-      </>
-    );
-  };
+  return (
+    <>
+      <div className="form-floating">
+        <input
+          type="text"
+          className="form-control"
+          id="firstNameInput"
+          placeholder="First Name"
+          onKeyDown={registerOnEnter}
+          onChange={(event) => setFirstName(event.target.value)}
+        />
+        <label htmlFor="firstNameInput">First Name</label>
+      </div>
+
+      <div className="form-floating">
+        <input
+          type="text"
+          className="form-control"
+          id="lastNameInput"
+          placeholder="Last Name"
+          onKeyDown={registerOnEnter}
+          onChange={(event) => setLastName(event.target.value)}
+        />
+        <label htmlFor="lastNameInput">Last Name</label>
+      </div>
+
+      <AuthenticationFields
+        alias={alias}
+        password={password}
+        onAliasChange={setAlias}
+        onPasswordChange={setPassword}
+        onKeyDown={registerOnEnter}
+      />
+
+      <div className="form-floating mb-3">
+        <input
+          type="file"
+          className="d-inline-block py-5 px-4 form-control bottom"
+          id="imageFileInput"
+          onKeyDown={registerOnEnter}
+          onChange={handleFileChange}
+        />
+        {imageUrl.length > 0 && (
+          <>
+            <label htmlFor="imageFileInput">User Image</label>
+            <img src={imageUrl} className="img-thumbnail" alt="" />
+          </>
+        )}
+      </div>
+    </>
+  );
+};
+
+
 
   const switchAuthenticationMethodFactory = () => {
     return (
       <div className="mb-3">
-        Algready registered? <Link to="/login">Sign in</Link>
+        Already registered? <Link to="/login">Sign in</Link>
       </div>
     );
   };
