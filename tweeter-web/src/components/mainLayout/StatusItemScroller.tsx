@@ -18,7 +18,7 @@ interface Props {
   featurePath: "/feed" | "/story";
 }
 
-const StatusItemScroller = (props: Props) => {
+const StatusItemScroller = ({ featurePath }: Props) => {
   const { displayToast } = useContext(ToastActionsContext);
 
   const [items, setItems] = useState<Status[]>([]);
@@ -31,31 +31,9 @@ const StatusItemScroller = (props: Props) => {
   const { setDisplayedUser } = useContext(UserInfoActionsContext);
   const { displayedUser: displayedUserAliasParam } = useParams();
 
-  const addItems = (newItems: Status[]) =>
-    setItems((previousItems) => [...previousItems, ...newItems]);
-
-  // Keep displayed user in sync with URL param (back/forward buttons)
-  useEffect(() => {
-    if (
-      authToken &&
-      displayedUserAliasParam &&
-      displayedUserAliasParam !== displayedUser!.alias
-    ) {
-      getUser(authToken, displayedUserAliasParam).then((toUser) => {
-        if (toUser) {
-          setDisplayedUser(toUser);
-        }
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedUserAliasParam]);
-
-  // Re-init whenever displayed user changes
-  useEffect(() => {
-    reset();
-    loadMoreItems(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedUser]);
+  const addItems = (newItems: Status[]) => {
+    setItems((prev) => [...prev, ...newItems]);
+  };
 
   const reset = () => {
     setItems([]);
@@ -63,18 +41,46 @@ const StatusItemScroller = (props: Props) => {
     setHasMoreItems(true);
   };
 
+  // Keep displayed user in sync with URL param (back/forward)
+  useEffect(() => {
+    if (!authToken || !displayedUserAliasParam) return;
+
+    if (!displayedUser || displayedUserAliasParam !== displayedUser.alias) {
+      getUser(authToken, displayedUserAliasParam).then((toUser) => {
+        if (toUser) setDisplayedUser(toUser);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedUserAliasParam, authToken]);
+
+  // Re-init whenever displayed user changes
+  useEffect(() => {
+    if (!authToken || !displayedUser) return;
+
+    reset();
+    loadMoreItems(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedUser, authToken]);
+
   const loadMoreItems = async (last: Status | null) => {
+    if (!authToken || !displayedUser) return;
+
     try {
       const [newItems, hasMore] = await loadMoreStatuses(
-        authToken!,
-        displayedUser!.alias,
+        authToken,
+        displayedUser.alias,
         PAGE_SIZE,
         last
       );
 
       setHasMoreItems(hasMore);
-      setLastItem(newItems[newItems.length - 1]);
-      addItems(newItems);
+
+      if (newItems.length > 0) {
+        setLastItem(newItems[newItems.length - 1]);
+        addItems(newItems);
+      } else {
+        setHasMoreItems(false);
+      }
     } catch (error) {
       displayToast(
         ToastType.Error,
@@ -90,7 +96,7 @@ const StatusItemScroller = (props: Props) => {
     pageSize: number,
     lastItem: Status | null
   ): Promise<[Status[], boolean]> => {
-    // TODO: Replace with server call later
+    // TODO: replace with server call later
     return FakeData.instance.getPageOfStatuses(lastItem, pageSize);
   };
 
@@ -98,7 +104,7 @@ const StatusItemScroller = (props: Props) => {
     authToken: AuthToken,
     alias: string
   ): Promise<User | null> => {
-    // TODO: Replace with server call later
+    // TODO: replace with server call later
     return FakeData.instance.findUserByAlias(alias);
   };
 
@@ -106,12 +112,14 @@ const StatusItemScroller = (props: Props) => {
     event.preventDefault();
 
     try {
-      const alias = extractAlias(event.target.toString());
-      const toUser = await getUser(authToken!, alias);
+      if (!authToken || !displayedUser) return;
 
-      if (toUser && !toUser.equals(displayedUser!)) {
+      const alias = extractAlias(event.target.toString());
+      const toUser = await getUser(authToken, alias);
+
+      if (toUser && !toUser.equals(displayedUser)) {
         setDisplayedUser(toUser);
-        navigate(`${props.featurePath}/${toUser.alias}`);
+        navigate(`${featurePath}/${toUser.alias}`);
       }
     } catch (error) {
       displayToast(
@@ -140,8 +148,8 @@ const StatusItemScroller = (props: Props) => {
           <StatusItem
             key={index}
             status={item}
-            linkTo={`${props.featurePath}/${item.user.alias}`}
-            featurePath={props.featurePath}
+            linkTo={`${featurePath}/${item.user.alias}`}
+            featurePath={featurePath}
             onNavigateToUser={navigateToUser}
           />
         ))}

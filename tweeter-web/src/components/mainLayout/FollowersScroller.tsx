@@ -1,7 +1,7 @@
 import UserItemScroller from "./UserItemScroller";
 
-const FolloweesScroller = () => {
-  return <UserItemScroller featurePath="/followees" />;
+const FollowersScroller = () => {
+  return <UserItemScroller featurePath="/followers" />;
 };
 
-export default FolloweesScroller;
+export default FollowersScroller;

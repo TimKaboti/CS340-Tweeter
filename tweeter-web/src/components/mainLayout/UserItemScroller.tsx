@@ -32,60 +32,63 @@ const UserItemScroller = (props: Props) => {
   const addItems = (newItems: User[]) =>
     setItems((previousItems) => [...previousItems, ...newItems]);
 
-  // Keep displayed user in sync with URL param (back/forward buttons)
-  useEffect(() => {
-    if (
-      authToken &&
-      displayedUserAliasParam &&
-      displayedUserAliasParam !== displayedUser!.alias
-    ) {
-      getUser(authToken, displayedUserAliasParam).then((toUser) => {
-        if (toUser) {
-          setDisplayedUser(toUser);
-        }
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedUserAliasParam]);
-
-  // Re-init whenever displayed user changes
-  useEffect(() => {
-    reset();
-    loadMoreItems(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayedUser]);
-
   const reset = () => {
     setItems([]);
     setLastItem(null);
     setHasMoreItems(true);
   };
 
+  // Keep displayed user in sync with URL param (back/forward buttons)
+  useEffect(() => {
+    if (!authToken || !displayedUserAliasParam) return;
+
+    if (!displayedUser || displayedUserAliasParam !== displayedUser.alias) {
+      getUser(authToken, displayedUserAliasParam).then((toUser) => {
+        if (toUser) setDisplayedUser(toUser);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedUserAliasParam, authToken]);
+
+  // Re-init whenever displayed user changes (ONLY when ready)
+  useEffect(() => {
+    if (!authToken || !displayedUser) return;
+
+    reset();
+    loadMoreItems(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayedUser, authToken]);
+
   const loadMoreItems = async (last: User | null) => {
+    if (!authToken || !displayedUser) return;
+
     try {
       const [newItems, hasMore] = await loadMoreUsers(
-        authToken!,
-        displayedUser!.alias,
+        authToken,
+        displayedUser.alias,
         PAGE_SIZE,
         last
       );
 
       setHasMoreItems(hasMore);
-      setLastItem(newItems[newItems.length - 1]);
-      addItems(newItems);
+
+      if (newItems.length > 0) {
+        setLastItem(newItems[newItems.length - 1]);
+        addItems(newItems);
+      } else {
+        setHasMoreItems(false);
+      }
     } catch (error) {
       displayToast(
         ToastType.Error,
-        `Failed to load ${props.featurePath.substring(
-          1
-        )} because of exception: ${error}`,
+        `Failed to load ${props.featurePath.substring(1)} because of exception: ${error}`,
         0
       );
     }
   };
 
   const loadMoreUsers = async (
-    authToken: AuthToken,
+    _authToken: AuthToken,
     userAlias: string,
     pageSize: number,
     lastUser: User | null
@@ -95,7 +98,7 @@ const UserItemScroller = (props: Props) => {
   };
 
   const getUser = async (
-    authToken: AuthToken,
+    _authToken: AuthToken,
     alias: string
   ): Promise<User | null> => {
     // TODO: Replace with server call later
