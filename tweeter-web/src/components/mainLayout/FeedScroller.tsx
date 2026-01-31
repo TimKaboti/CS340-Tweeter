@@ -1,17 +1,13 @@
-import { useContext } from "react";
-import {
-  UserInfoContext,
-  UserInfoActionsContext,
-} from "../userInfo/UserInfoContexts";
-import { AuthToken, FakeData, Status, User } from "tweeter-shared";
-import { useState, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { ToastActionsContext } from "../toaster/ToastContexts";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { ToastType } from "../toaster/Toast";
-import Post from "../statusItem/Post";
-import StatusItem from "../statusItem/StatusItem";
+import { useNavigate, useParams } from "react-router-dom";
+import { AuthToken, FakeData, Status, User } from "tweeter-shared";
 
+import { ToastActionsContext } from "../toaster/ToastContexts";
+import { ToastType } from "../toaster/Toast";
+import { UserInfoActionsContext, UserInfoContext } from "../userInfo/UserInfoContexts";
+
+import StatusItem from "../statusItem/StatusItem";
 
 export const PAGE_SIZE = 10;
 
@@ -42,12 +38,14 @@ const FeedScroller = () => {
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUserAliasParam]);
 
   // Initialize the component whenever the displayed user changes
   useEffect(() => {
     reset();
     loadMoreItems(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUser]);
 
   const reset = async () => {
@@ -132,16 +130,15 @@ const FeedScroller = () => {
         hasMore={hasMoreItems}
         loader={<h4>Loading...</h4>}
       >
-       {items.map((item, index) => (
-  <StatusItem
-    key={index}
-    status={item}
-    linkTo={`/feed/${item.user.alias}`}
-    featurePath="/feed"
-    onNavigateToUser={navigateToUser}
-  />
-))}
-
+        {items.map((item, index) => (
+          <StatusItem
+            key={index}
+            status={item}
+            linkTo={`/feed/${item.user.alias}`}
+            featurePath="/feed"
+            onNavigateToUser={navigateToUser}
+          />
+        ))}
       </InfiniteScroll>
     </div>
   );
