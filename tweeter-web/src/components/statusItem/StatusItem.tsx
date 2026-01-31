@@ -4,14 +4,8 @@ import Post from "./Post";
 
 interface Props {
   status: Status;
-
-  /** where the alias link should go, e.g. `/feed/@bob` or `/story/@bob` */
   linkTo: string;
-
-  /** used by Post.tsx (your Post requires it) */
   featurePath: string;
-
-  /** your existing navigateToUser handler from the scroller */
   onNavigateToUser: (event: React.MouseEvent) => Promise<void>;
 }
 
