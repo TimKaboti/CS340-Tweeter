@@ -25,3 +25,4 @@ export const useMessageList = <T,>() => {
     reset,
   };
 };
+export default useMessageList;

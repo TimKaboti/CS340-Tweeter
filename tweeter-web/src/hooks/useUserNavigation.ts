@@ -2,32 +2,22 @@ import { useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthToken, FakeData, User } from "tweeter-shared";
 
-import useUserInfo from "./useUserInfo";
-import useUserInfoActions from "./useUserInfoActions";
 import { ToastActionsContext } from "../components/toaster/ToastContexts";
 import { ToastType } from "../components/toaster/Toast";
+
+import useUserInfo from "./useUserInfo";
+import useUserInfoActions from "./useUserInfoActions";
 
 type FeaturePath = "/feed" | "/story" | "/followers" | "/followees";
 
 const useUserNavigation = (featurePath: FeaturePath) => {
   const navigate = useNavigate();
-
   const { displayedUser, authToken } = useUserInfo();
   const { setDisplayedUser } = useUserInfoActions();
-
   const { displayToast } = useContext(ToastActionsContext);
 
   const { displayedUser: displayedUserAliasParam } = useParams();
 
-  const getUser = async (
-    _authToken: AuthToken,
-    alias: string
-  ): Promise<User | null> => {
-    // TODO: Replace with server call later
-    return FakeData.instance.findUserByAlias(alias);
-  };
-
-  // Keep displayedUser in sync with URL param (back/forward buttons)
   useEffect(() => {
     if (!authToken || !displayedUserAliasParam) return;
 
@@ -38,6 +28,10 @@ const useUserNavigation = (featurePath: FeaturePath) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUserAliasParam, authToken]);
+
+  const getUser = async (_authToken: AuthToken, alias: string): Promise<User | null> => {
+    return FakeData.instance.findUserByAlias(alias);
+  };
 
   const extractAlias = (value: string): string => {
     const index = value.indexOf("@");
