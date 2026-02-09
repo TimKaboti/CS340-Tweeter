@@ -1,69 +1,66 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { AuthToken, FakeData, Status } from "tweeter-shared";
+import { Status } from "tweeter-shared";
 
 import StatusItem from "../statusItem/StatusItem";
 
 import useMessageList from "../../hooks/useMessageList";
-import useMessageActions from "../../hooks/useMessageActions";
 import useUserInfo from "../../hooks/useUserInfo";
 import useUserNavigation from "../../hooks/useUserNavigation";
+
+// presenter types
+import StatusItemPresenter, { StatusItemView } from "../../presenter/StatusItemPresenter";
 
 export const PAGE_SIZE = 10;
 
 interface Props {
   featurePath: "/feed" | "/story";
+  presenterFactory: (view: StatusItemView) => StatusItemPresenter;
 }
 
-const StatusItemScroller = ({ featurePath }: Props) => {
+
+const StatusItemScroller = ({ featurePath, presenterFactory }: Props) => {
   const { displayedUser, authToken } = useUserInfo();
   const { navigateToUser } = useUserNavigation(featurePath);
 
-  const { items, hasMoreItems, setHasMoreItems, lastItem, setLastItem, addItems, reset } =
-    useMessageList<Status>();
+  const { items, addItems, reset } = useMessageList<Status>();
 
-  const { loadMore } = useMessageActions();
+  // Observer (View interface implementation)
+  const listener: StatusItemView = {
+    addItems: (newItems: Status[]) => addItems(newItems),
+    displayErrorMessage: (message: string) => {
+      // If you have a toaster hook method you prefer, swap it in here.
+      alert(message);
+    },
+  };
+
+  // Persist presenter across rerenders
+  const presenterRef = useRef<StatusItemPresenter | null>(null);
+  if (!presenterRef.current) {
+    presenterRef.current = presenterFactory(listener);
+  }
+
+  const loadMoreItems = async () => {
+    if (!authToken || !displayedUser) return;
+    await presenterRef.current!.loadMoreItems(authToken, displayedUser, PAGE_SIZE);
+  };
 
   useEffect(() => {
     if (!authToken || !displayedUser) return;
 
-    reset();
-    loadMoreItems(null);
+    reset(); // clears view items
+    presenterRef.current!.reset(); // clears presenter paging
+    void loadMoreItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUser, authToken]);
-
-  const loadMoreStatuses = async (
-    _authToken: AuthToken,
-    _userAlias: string,
-    pageSize: number,
-    last: Status | null
-  ): Promise<[Status[], boolean]> => {
-    return FakeData.instance.getPageOfStatuses(last, pageSize);
-  };
-
-  const loadMoreItems = async (last: Status | null) => {
-    if (!authToken || !displayedUser) return;
-
-    await loadMore<Status, AuthToken>({
-      authToken,
-      userAlias: displayedUser.alias,
-      pageSize: PAGE_SIZE,
-      lastItem: last,
-      loadPage: loadMoreStatuses,
-      setHasMoreItems,
-      setLastItem,
-      addItems,
-      errorMessagePrefix: `Failed to load ${featurePath.substring(1)} items`,
-    });
-  };
 
   return (
     <div className="container px-0 overflow-visible vh-100">
       <InfiniteScroll
         className="pr-0 mr-0"
         dataLength={items.length}
-        next={() => loadMoreItems(lastItem)}
-        hasMore={hasMoreItems}
+        next={loadMoreItems}
+        hasMore={presenterRef.current!.hasMoreItems}
         loader={<h4>Loading...</h4>}
       >
         {items.map((item, index) => (
