@@ -1,80 +1,80 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import InfiniteScroll from "react-infinite-scroll-component";
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 
 import UserItem from "../userItem/UserItem";
 
 import useMessageList from "../../hooks/useMessageList";
-import useMessageActions from "../../hooks/useMessageActions";
 import useUserInfo from "../../hooks/useUserInfo";
 import useUserNavigation from "../../hooks/useUserNavigation";
+import UserItemPresenter, { UserItemView } from "../../presenter/UserItemPresenter";
 
 export const PAGE_SIZE = 10;
 
 interface Props {
   featurePath: "/followers" | "/followees";
+  presenterFactory: (view: UserItemView) => UserItemPresenter;
 }
 
-const UserItemScroller = ({ featurePath }: Props) => {
+const UserItemScroller = ({ featurePath, presenterFactory }: Props) => {
   const { displayedUser, authToken } = useUserInfo();
   const { navigateToUser } = useUserNavigation(featurePath);
 
-  const { items, hasMoreItems, setHasMoreItems, lastItem, setLastItem, addItems, reset } =
-    useMessageList<User>();
+  // Only keep "visual" state in the view layer
+  const { items, addItems, reset } = useMessageList<User>();
 
-  const { loadMore } = useMessageActions();
+  // Observer/listener object (implements the view interface)
+  const listener: UserItemView = {
+    addItems: (newUsers: User[]) => {
+      addItems(newUsers);
+    },
+    displayErrorMessage: (message: string) => {
+      // Replace this with your toast system if you want
+      console.error(message);
+      alert(message);
+    },
+  };
+
+  // Presenter must persist across rerenders (video’s infinite-scroll bug fix)
+  const presenterRef = useRef<UserItemPresenter | null>(null);
+  if (!presenterRef.current) {
+    presenterRef.current = presenterFactory(listener);
+  }
+
+  const loadMore = async () => {
+    if (!authToken || !displayedUser) return;
+    await presenterRef.current!.loadMoreItems(authToken, displayedUser.alias, PAGE_SIZE);
+  };
 
   useEffect(() => {
     if (!authToken || !displayedUser) return;
 
+    // reset view state
     reset();
-    loadMoreItems(null);
+
+    // reset presenter paging state
+    presenterRef.current!.reset();
+
+    // load first page
+    void loadMore();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUser, authToken]);
-
-  const loadMoreUsers = async (
-    _authToken: AuthToken,
-    userAlias: string,
-    pageSize: number,
-    last: User | null
-  ): Promise<[User[], boolean]> => {
-    return FakeData.instance.getPageOfUsers(last, pageSize, userAlias);
-  };
-
-  const loadMoreItems = async (last: User | null) => {
-    if (!authToken || !displayedUser) return;
-
-    await loadMore<User, AuthToken>({
-      authToken,
-      userAlias: displayedUser.alias,
-      pageSize: PAGE_SIZE,
-      lastItem: last,
-      loadPage: loadMoreUsers,
-      setHasMoreItems,
-      setLastItem,
-      addItems,
-      errorMessagePrefix: `Failed to load ${featurePath.substring(1)}`,
-    });
-  };
 
   return (
     <div className="container px-0 overflow-visible vh-100">
       <InfiniteScroll
         className="pr-0 mr-0"
         dataLength={items.length}
-        next={() => loadMoreItems(lastItem)}
-        hasMore={hasMoreItems}
+        next={loadMore}
+        hasMore={presenterRef.current!.hasMoreItems}
         loader={<h4>Loading...</h4>}
       >
         {items.map((item, index) => (
-        <div
-            key={index}
-            className="row mb-3 mx-0 px-0 border rounded bg-white"
-        >
+          <div key={index} className="row mb-3 mx-0 px-0 border rounded bg-white">
             <UserItem user={item} featurePath={featurePath} />
-        </div>
+          </div>
         ))}
-
       </InfiniteScroll>
     </div>
   );
