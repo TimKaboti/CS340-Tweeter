@@ -6,22 +6,21 @@ export default class FeedPresenter extends StatusItemPresenter {
     super(view);
   }
 
-  public async loadMoreItems(authToken: AuthToken, user: User, pageSize: number): Promise<void> {
-    try {
-      const [newItems, hasMore] = await this.service.loadMoreFeed(
-        authToken,
-        user,
-        pageSize,
-        this.lastItem
-      );
+  protected itemDescription(): string {
+    return "load feed items";
+  }
 
-      this.hasMoreItems = hasMore;
-      this.lastItem = newItems.length > 0 ? newItems[newItems.length - 1] : null;
-
-      this.view.addItems(newItems);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      this.view.displayErrorMessage(`Failed to load feed items: ${msg}`);
-    }
+  protected async getMoreItems(
+    authToken: AuthToken,
+    user: User,
+    pageSize: number,
+    lastItem: any
+  ): Promise<[any[], boolean]> {
+    return this.service.loadMoreFeed(
+      authToken,
+      user,
+      pageSize,
+      lastItem
+    );
   }
 }
