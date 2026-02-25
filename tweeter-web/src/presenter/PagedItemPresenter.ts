@@ -6,42 +6,29 @@ export interface PagedItemView<T> extends View {
 }
 
 export default abstract class PagedItemPresenter<T> extends Presenter<PagedItemView<T>> {
-  private _hasMoreItems = true;
-  protected lastItem: T | null = null;
-
-  protected constructor(view: PagedItemView<T>) {
-    super(view);
-  }
+  protected readonly pageSize: number = 10;
+  protected _hasMoreItems = true;
+  protected _lastItem: T | null = null;
 
   public get hasMoreItems(): boolean {
     return this._hasMoreItems;
   }
 
-  protected set hasMoreItems(value: boolean) {
-    this._hasMoreItems = value;
+  protected get lastItem(): T | null {
+    return this._lastItem;
   }
 
   public reset(): void {
     this._hasMoreItems = true;
-    this.lastItem = null;
+    this._lastItem = null;
   }
 
-  // TEMPLATE METHOD (same for all 4 presenters)
-  public async loadMoreItems(
-    authToken: AuthToken,
-    userOrAlias: any,
-    pageSize: number
-  ): Promise<void> {
+  public async loadMoreItems(authToken: AuthToken, userAlias: string, pageSize: number): Promise<void> {
     await this.doFailureReportingOperation(async () => {
-      const [newItems, hasMore] = await this.getMoreItems(
-        authToken,
-        userOrAlias,
-        pageSize,
-        this.lastItem
-      );
+      const [newItems, hasMore] = await this.getMoreItems(authToken, userAlias, pageSize, this._lastItem);
 
-      this.hasMoreItems = hasMore;
-      this.lastItem = newItems.length > 0 ? newItems[newItems.length - 1] : null;
+      this._hasMoreItems = hasMore;
+      this._lastItem = newItems.length > 0 ? newItems[newItems.length - 1] : null;
 
       this.view.addItems(newItems);
     }, this.itemDescription());
@@ -51,7 +38,7 @@ export default abstract class PagedItemPresenter<T> extends Presenter<PagedItemV
 
   protected abstract getMoreItems(
     authToken: AuthToken,
-    userOrAlias: any,
+    userAlias: string,
     pageSize: number,
     lastItem: T | null
   ): Promise<[T[], boolean]>;

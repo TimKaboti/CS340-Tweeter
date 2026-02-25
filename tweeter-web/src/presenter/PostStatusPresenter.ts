@@ -6,7 +6,7 @@ export interface PostStatusView {
   clearPost(): void;
   showInfo(message: string, durationMs: number): void;
   showError(message: string, durationMs: number): void;
-  showPersistentInfo(message: string): string; // returns toast id
+  showPersistentInfo(message: string): string; 
   dismissToast(id: string): void;
 }
 

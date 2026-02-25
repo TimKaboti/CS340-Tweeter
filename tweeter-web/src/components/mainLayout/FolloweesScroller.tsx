@@ -1,14 +1,14 @@
-import UserItemScroller from "./UserItemScroller";
-import FolloweesPresenter from "../../presenter/FolloweesPresenter";
-import { UserItemView } from "../../presenter/UserItemPresenter";
+// import UserItemScroller from "./UserItemScroller";
+// import FolloweesPresenter from "../../presenter/FolloweesPresenter";
+// import { UserItemView } from "../../presenter/UserItemPresenter";
 
-const FolloweesScroller = () => {
-  return (
-    <UserItemScroller
-      featurePath="/followees"
-      presenterFactory={(view: UserItemView) => new FolloweesPresenter(view)}
-    />
-  );
-};
+// const FolloweesScroller = () => {
+//   return (
+//     <UserItemScroller
+//       featurePath="/followees"
+//       presenterFactory={(view: UserItemView) => new FolloweesPresenter(view)}
+//     />
+//   );
+// };
 
-export default FolloweesScroller;
+// export default FolloweesScroller;
