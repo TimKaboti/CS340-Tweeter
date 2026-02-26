@@ -1,4 +1,4 @@
-import "./AppNavbar.css";
+import "./App.css";
 import { useContext } from "react";
 import {
   UserInfoContext,

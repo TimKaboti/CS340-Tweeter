@@ -19,6 +19,10 @@ export default class PostStatusPresenter {
     this.service = new StatusService();
   }
 
+  protected get statusService(): StatusService {
+  return this.service;
+  }
+
   public canPost(postText: string, authToken: AuthToken | null, currentUser: User | null): boolean {
     return !!postText.trim() && !!authToken && !!currentUser;
   }
@@ -31,7 +35,7 @@ export default class PostStatusPresenter {
       toastId = this.view.showPersistentInfo("Posting status...");
 
       const status = new Status(postText, currentUser, Date.now());
-      await this.service.postStatus(authToken, status);
+      await this.statusService.postStatus(authToken, status);
 
       this.view.clearPost();
       this.view.showInfo("Status posted!", 2000);
