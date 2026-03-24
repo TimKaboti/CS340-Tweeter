@@ -1,12 +1,13 @@
 import { useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 
 import { ToastActionsContext } from "../components/toaster/ToastContexts";
 import { ToastType } from "../components/toaster/Toast";
 
 import useUserInfo from "./useUserInfo";
 import useUserInfoActions from "./useUserInfoActions";
+import UserService from "../service/UserService";
 
 type FeaturePath = "/feed" | "/story" | "/followers" | "/followees";
 
@@ -17,6 +18,7 @@ const useUserNavigation = (featurePath: FeaturePath) => {
   const { displayToast } = useContext(ToastActionsContext);
 
   const { displayedUser: displayedUserAliasParam } = useParams();
+  const userService = new UserService();
 
   useEffect(() => {
     if (!authToken || !displayedUserAliasParam) return;
@@ -29,8 +31,11 @@ const useUserNavigation = (featurePath: FeaturePath) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayedUserAliasParam, authToken]);
 
-  const getUser = async (_authToken: AuthToken, alias: string): Promise<User | null> => {
-    return FakeData.instance.findUserByAlias(alias);
+  const getUser = async (
+    authToken: AuthToken,
+    alias: string
+  ): Promise<User | null> => {
+    return userService.getUser(authToken, alias);
   };
 
   const extractAlias = (value: string): string => {

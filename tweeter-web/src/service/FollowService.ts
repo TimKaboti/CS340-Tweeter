@@ -1,5 +1,6 @@
 import {
   AuthToken,
+  CountRequest,
   FollowActionRequest,
   IsFollowerRequest,
   PagedUserItemRequest,
@@ -40,6 +41,22 @@ export default class FollowService {
     );
 
     return this.serverFacade.getMoreFollowers(request);
+  }
+
+  public async getFolloweeCount(
+    authToken: AuthToken,
+    userAlias: string
+  ): Promise<number> {
+    const request = new CountRequest(authToken.token, userAlias);
+    return this.serverFacade.getFolloweeCount(request);
+  }
+
+  public async getFollowerCount(
+    authToken: AuthToken,
+    userAlias: string
+  ): Promise<number> {
+    const request = new CountRequest(authToken.token, userAlias);
+    return this.serverFacade.getFollowerCount(request);
   }
 
   public async getIsFollowerStatus(

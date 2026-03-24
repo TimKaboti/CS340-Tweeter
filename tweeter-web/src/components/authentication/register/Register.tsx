@@ -1,16 +1,15 @@
 import "./Register.css";
 import "bootstrap/dist/css/bootstrap.css";
-import { useContext } from "react";
+import { useContext, useState, ChangeEvent } from "react";
 import { UserInfoActionsContext } from "../../userInfo/UserInfoContexts";
-import { ChangeEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthenticationFormLayout from "../AuthenticationFormLayout";
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 import { ToastActionsContext } from "../../toaster/ToastContexts";
 import { Buffer } from "buffer";
 import { ToastType } from "../../toaster/Toast";
 import AuthenticationFields from "../AuthenticationFields";
-
+import AuthService from "../../../service/AuthService";
 
 const Register = () => {
   const [firstName, setFirstName] = useState("");
@@ -27,6 +26,8 @@ const Register = () => {
   const { updateUserInfo } = useContext(UserInfoActionsContext);
   const { displayToast } = useContext(ToastActionsContext);
 
+  const authService = new AuthService();
+
   const checkSubmitButtonStatus = (): boolean => {
     return (
       !firstName ||
@@ -39,7 +40,7 @@ const Register = () => {
   };
 
   const registerOnEnter = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (event.key == "Enter" && !checkSubmitButtonStatus()) {
+    if (event.key === "Enter" && !checkSubmitButtonStatus()) {
       doRegister();
     }
   };
@@ -56,8 +57,6 @@ const Register = () => {
       const reader = new FileReader();
       reader.onload = (event: ProgressEvent<FileReader>) => {
         const imageStringBase64 = event.target?.result as string;
-
-        // Remove unnecessary file metadata from the start of the string.
         const imageStringBase64BufferContents =
           imageStringBase64.split("base64,")[1];
 
@@ -70,7 +69,6 @@ const Register = () => {
       };
       reader.readAsDataURL(file);
 
-      // Set image file extension (and move to a separate method)
       const fileExtension = getFileExtension(file);
       if (fileExtension) {
         setImageFileExtension(fileExtension);
@@ -78,6 +76,7 @@ const Register = () => {
     } else {
       setImageUrl("");
       setImageBytes(new Uint8Array());
+      setImageFileExtension("");
     }
   };
 
@@ -119,75 +118,71 @@ const Register = () => {
     userImageBytes: Uint8Array,
     imageFileExtension: string
   ): Promise<[User, AuthToken]> => {
-    // Not neded now, but will be needed when you make the request to the server in milestone 3
     const imageStringBase64: string =
       Buffer.from(userImageBytes).toString("base64");
 
-    // TODO: Replace with the result of calling the server
-    const user = FakeData.instance.firstUser;
-
-    if (user === null) {
-      throw new Error("Invalid registration");
-    }
-
-    return [user, FakeData.instance.authToken];
+    return authService.register(
+      firstName,
+      lastName,
+      alias,
+      password,
+      imageFileExtension
+    );
   };
 
   const inputFieldFactory = () => {
-  return (
-    <>
-      <div className="form-floating">
-        <input
-          type="text"
-          className="form-control"
-          id="firstNameInput"
-          placeholder="First Name"
+    return (
+      <>
+        <div className="form-floating">
+          <input
+            type="text"
+            className="form-control"
+            id="firstNameInput"
+            placeholder="First Name"
+            onKeyDown={registerOnEnter}
+            onChange={(event) => setFirstName(event.target.value)}
+          />
+          <label htmlFor="firstNameInput">First Name</label>
+        </div>
+
+        <div className="form-floating">
+          <input
+            type="text"
+            className="form-control"
+            id="lastNameInput"
+            placeholder="Last Name"
+            onKeyDown={registerOnEnter}
+            onChange={(event) => setLastName(event.target.value)}
+          />
+          <label htmlFor="lastNameInput">Last Name</label>
+        </div>
+
+        <AuthenticationFields
+          alias={alias}
+          password={password}
+          onAliasChange={setAlias}
+          onPasswordChange={setPassword}
           onKeyDown={registerOnEnter}
-          onChange={(event) => setFirstName(event.target.value)}
         />
-        <label htmlFor="firstNameInput">First Name</label>
-      </div>
 
-      <div className="form-floating">
-        <input
-          type="text"
-          className="form-control"
-          id="lastNameInput"
-          placeholder="Last Name"
-          onKeyDown={registerOnEnter}
-          onChange={(event) => setLastName(event.target.value)}
-        />
-        <label htmlFor="lastNameInput">Last Name</label>
-      </div>
-
-      <AuthenticationFields
-        alias={alias}
-        password={password}
-        onAliasChange={setAlias}
-        onPasswordChange={setPassword}
-        onKeyDown={registerOnEnter}
-      />
-
-      <div className="form-floating mb-3">
-        <input
-          type="file"
-          className="d-inline-block py-5 px-4 form-control bottom"
-          id="imageFileInput"
-          onKeyDown={registerOnEnter}
-          onChange={handleFileChange}
-        />
-        {imageUrl.length > 0 && (
-          <>
-            <label htmlFor="imageFileInput">User Image</label>
-            <img src={imageUrl} className="img-thumbnail" alt="" />
-          </>
-        )}
-      </div>
-    </>
-  );
-};
-
-
+        <div className="form-floating mb-3">
+          <input
+            type="file"
+            className="d-inline-block py-5 px-4 form-control bottom"
+            id="imageFileInput"
+            onKeyDown={registerOnEnter}
+            onChange={handleFileChange}
+          />
+          {imageUrl.length > 0 && (
+            <>
+              <label htmlFor="imageFileInput">User Image</label>
+              <img src={imageUrl} className="img-thumbnail" alt="" />
+            </>
+          )}
+        </div>
+      </>
+    );
+  };
 
   const switchAuthenticationMethodFactory = () => {
     return (

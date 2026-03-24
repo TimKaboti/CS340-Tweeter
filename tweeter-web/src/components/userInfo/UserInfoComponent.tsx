@@ -1,11 +1,11 @@
 import "./UserInfoComponent.css";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { UserInfoContext, UserInfoActionsContext } from "./UserInfoContexts";
-import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ToastActionsContext } from "../toaster/ToastContexts";
-import { AuthToken, FakeData, User } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 import { ToastType } from "../toaster/Toast";
+import FollowService from "../../service/FollowService";
 
 const UserInfo = () => {
   const [isFollower, setIsFollower] = useState(false);
@@ -14,20 +14,23 @@ const UserInfo = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { displayToast, deleteToast } = useContext(ToastActionsContext);
-
   const { currentUser, authToken, displayedUser } = useContext(UserInfoContext);
   const { setDisplayedUser } = useContext(UserInfoActionsContext);
+
   const navigate = useNavigate();
   const location = useLocation();
+  const followService = new FollowService();
 
-  if (!displayedUser) {
-    setDisplayedUser(currentUser!);
+  if (!displayedUser && currentUser) {
+    setDisplayedUser(currentUser);
   }
 
   useEffect(() => {
-    setIsFollowerStatus(authToken!, currentUser!, displayedUser!);
-    setNumbFollowees(authToken!, displayedUser!);
-    setNumbFollowers(authToken!, displayedUser!);
+    if (authToken && currentUser && displayedUser) {
+      setIsFollowerStatus(authToken, currentUser, displayedUser);
+      setNumbFollowees(authToken, displayedUser);
+      setNumbFollowers(authToken, displayedUser);
+    }
   }, [displayedUser]);
 
   const setIsFollowerStatus = async (
@@ -36,11 +39,11 @@ const UserInfo = () => {
     displayedUser: User
   ) => {
     try {
-      if (currentUser === displayedUser) {
+      if (currentUser.equals(displayedUser)) {
         setIsFollower(false);
       } else {
         setIsFollower(
-          await getIsFollowerStatus(authToken!, currentUser!, displayedUser!)
+          await getIsFollowerStatus(authToken, currentUser, displayedUser)
         );
       }
     } catch (error) {
@@ -57,8 +60,11 @@ const UserInfo = () => {
     user: User,
     selectedUser: User
   ): Promise<boolean> => {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.isFollower();
+    return followService.getIsFollowerStatus(
+      authToken,
+      user.alias,
+      selectedUser.alias
+    );
   };
 
   const setNumbFollowees = async (
@@ -80,8 +86,7 @@ const UserInfo = () => {
     authToken: AuthToken,
     user: User
   ): Promise<number> => {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.getFolloweeCount(user.alias);
+    return followService.getFolloweeCount(authToken, user.alias);
   };
 
   const setNumbFollowers = async (
@@ -103,14 +108,14 @@ const UserInfo = () => {
     authToken: AuthToken,
     user: User
   ): Promise<number> => {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.getFollowerCount(user.alias);
+    return followService.getFollowerCount(authToken, user.alias);
   };
 
   const switchToLoggedInUser = (event: React.MouseEvent): void => {
     event.preventDefault();
-    setDisplayedUser(currentUser!);
-    navigate(`${getBaseUrl()}/${currentUser!.alias}`);
+    if (!currentUser) return;
+    setDisplayedUser(currentUser);
+    navigate(`${getBaseUrl()}/${currentUser.alias}`);
   };
 
   const getBaseUrl = (): string => {
@@ -123,7 +128,7 @@ const UserInfo = () => {
   ): Promise<void> => {
     event.preventDefault();
 
-    var followingUserToast = "";
+    let followingUserToast = "";
 
     try {
       setIsLoading(true);
@@ -133,14 +138,14 @@ const UserInfo = () => {
         0
       );
 
-      const [followerCount, followeeCount] = await follow(
+      const [newFollowerCount, newFolloweeCount] = await follow(
         authToken!,
         displayedUser!
       );
 
       setIsFollower(true);
-      setFollowerCount(followerCount);
-      setFolloweeCount(followeeCount);
+      setFollowerCount(newFollowerCount);
+      setFolloweeCount(newFolloweeCount);
     } catch (error) {
       displayToast(
         ToastType.Error,
@@ -157,15 +162,12 @@ const UserInfo = () => {
     authToken: AuthToken,
     userToFollow: User
   ): Promise<[followerCount: number, followeeCount: number]> => {
-    // Pause so we can see the follow message. Remove when connected to the server
-    await new Promise((f) => setTimeout(f, 2000));
+    await followService.follow(authToken, userToFollow.alias);
 
-    // TODO: Call the server
+    const newFollowerCount = await getFollowerCount(authToken, userToFollow);
+    const newFolloweeCount = await getFolloweeCount(authToken, userToFollow);
 
-    const followerCount = await getFollowerCount(authToken, userToFollow);
-    const followeeCount = await getFolloweeCount(authToken, userToFollow);
-
-    return [followerCount, followeeCount];
+    return [newFollowerCount, newFolloweeCount];
   };
 
   const unfollowDisplayedUser = async (
@@ -173,7 +175,7 @@ const UserInfo = () => {
   ): Promise<void> => {
     event.preventDefault();
 
-    var unfollowingUserToast = "";
+    let unfollowingUserToast = "";
 
     try {
       setIsLoading(true);
@@ -183,14 +185,14 @@ const UserInfo = () => {
         0
       );
 
-      const [followerCount, followeeCount] = await unfollow(
+      const [newFollowerCount, newFolloweeCount] = await unfollow(
         authToken!,
         displayedUser!
       );
 
       setIsFollower(false);
-      setFollowerCount(followerCount);
-      setFolloweeCount(followeeCount);
+      setFollowerCount(newFollowerCount);
+      setFolloweeCount(newFolloweeCount);
     } catch (error) {
       displayToast(
         ToastType.Error,
@@ -207,15 +209,12 @@ const UserInfo = () => {
     authToken: AuthToken,
     userToUnfollow: User
   ): Promise<[followerCount: number, followeeCount: number]> => {
-    // Pause so we can see the unfollow message. Remove when connected to the server
-    await new Promise((f) => setTimeout(f, 2000));
+    await followService.unfollow(authToken, userToUnfollow.alias);
 
-    // TODO: Call the server
+    const newFollowerCount = await getFollowerCount(authToken, userToUnfollow);
+    const newFolloweeCount = await getFolloweeCount(authToken, userToUnfollow);
 
-    const followerCount = await getFollowerCount(authToken, userToUnfollow);
-    const followeeCount = await getFolloweeCount(authToken, userToUnfollow);
-
-    return [followerCount, followeeCount];
+    return [newFollowerCount, newFolloweeCount];
   };
 
   return (

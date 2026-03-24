@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { AuthToken, User, FakeData } from "tweeter-shared";
+import { AuthToken, User } from "tweeter-shared";
 import { ToastType } from "../toaster/Toast";
 import { useContext } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   UserInfoContext,
 } from "../userInfo/UserInfoContexts";
 import { ToastActionsContext } from "../toaster/ToastContexts";
+import UserService from "../../service/UserService";
 
 interface Props {
   user: User;
@@ -19,6 +20,7 @@ const UserItem = (props: Props) => {
   const { setDisplayedUser } = useContext(UserInfoActionsContext);
 
   const navigate = useNavigate();
+  const userService = new UserService();
 
   const navigateToUser = async (event: React.MouseEvent): Promise<void> => {
     event.preventDefault();
@@ -52,8 +54,7 @@ const UserItem = (props: Props) => {
     authToken: AuthToken,
     alias: string
   ): Promise<User | null> => {
-    // TODO: Replace with the result of calling server
-    return FakeData.instance.findUserByAlias(alias);
+    return userService.getUser(authToken, alias);
   };
 
   return (
