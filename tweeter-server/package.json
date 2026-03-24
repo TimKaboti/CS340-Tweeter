@@ -1,0 +1,17 @@
+{
+    "name": "tweeter-server",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "type": "commonjs",
+    "scripts": {
+        "build": "tsc"
+    },
+    "dependencies": {
+        "date-fns": "^4.1.0",
+        "tweeter-shared": "file:../tweeter-shared",
+        "uuid": "^13.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}
