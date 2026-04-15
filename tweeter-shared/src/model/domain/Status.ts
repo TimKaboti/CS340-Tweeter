@@ -3,17 +3,34 @@ import { User } from "./User";
 import { format } from "date-fns";
 
 export class Status {
+  private _id: string;
   private _post: string;
   private _user: User;
   private _timestamp: number;
   private _segments: PostSegment[];
 
-  public constructor(post: string, user: User, timestamp: number) {
+  public constructor(
+    id: string,
+    post: string,
+    user: User,
+    timestamp: number
+  ) {
+    this._id = id;
     this._post = post;
     this._user = user;
     this._timestamp = timestamp;
     this._segments = this.getPostSegments(post);
   }
+
+  public get id(): string {
+    return this._id;
+  }
+
+  public set id(value: string) {
+    this._id = value;
+  }
+
+  
 
   private getPostSegments(post: string): PostSegment[] {
     const segments: PostSegment[] = [];
@@ -33,7 +50,6 @@ export class Status {
       }
 
       segments.push(reference);
-
       startIndex = reference.endPosition;
     }
 
@@ -67,7 +83,6 @@ export class Status {
 
   private static parseUrlReferences(post: string): PostSegment[] {
     const references: PostSegment[] = [];
-
     const urls: string[] = Status.parseUrls(post);
 
     let previousStartIndex = 0;
@@ -76,13 +91,11 @@ export class Status {
       let startIndex = post.indexOf(url, previousStartIndex);
 
       if (startIndex > -1) {
-        // Push the url
         references.push(
           new PostSegment(url, startIndex, startIndex + url.length, Type.url)
         );
 
-        // Move start and previous start past the url
-        startIndex = startIndex + url.length;
+        startIndex += url.length;
         previousStartIndex = startIndex;
       }
     }
@@ -106,28 +119,14 @@ export class Status {
   private static findUrlEndIndex(word: string): number {
     let index;
 
-    if (word.includes(".com")) {
-      index = word.indexOf(".com");
-      index += 4;
-    } else if (word.includes(".net")) {
-      index = word.indexOf(".net");
-      index += 4;
-    } else if (word.includes(".org")) {
-      index = word.indexOf(".org");
-      index += 4;
-    } else if (word.includes(".edu")) {
-      index = word.indexOf(".edu");
-      index += 4;
-    } else if (word.includes(".mil")) {
-      index = word.indexOf(".mil");
-      index += 4;
-    } else {
+    if (word.includes(".com")) index = word.indexOf(".com") + 4;
+    else if (word.includes(".net")) index = word.indexOf(".net") + 4;
+    else if (word.includes(".org")) index = word.indexOf(".org") + 4;
+    else if (word.includes(".edu")) index = word.indexOf(".edu") + 4;
+    else if (word.includes(".mil")) index = word.indexOf(".mil") + 4;
+    else {
       index = word.length;
-
-      // Remove trailing non-alphabetic characters (such as punctuation) that can't be at the end of a url
-      while (!Status.isLetter(word[index])) {
-        index--;
-      }
+      while (!Status.isLetter(word[index])) index--;
     }
 
     return index;
@@ -139,7 +138,6 @@ export class Status {
 
   private static parseMentionReferences(post: string): PostSegment[] {
     const references: PostSegment[] = [];
-
     const mentions: string[] = Status.parseMentions(post);
 
     let previousStartIndex = 0;
@@ -148,7 +146,6 @@ export class Status {
       let startIndex = post.indexOf(mention, previousStartIndex);
 
       if (startIndex > -1) {
-        // Push the alias
         references.push(
           new PostSegment(
             mention,
@@ -158,8 +155,7 @@ export class Status {
           )
         );
 
-        // Move start and previous start past the mention
-        startIndex = startIndex + mention.length;
+        startIndex += mention.length;
         previousStartIndex = startIndex;
       }
     }
@@ -172,10 +168,7 @@ export class Status {
 
     for (let word of post.split(/(\s+)/)) {
       if (word.startsWith("@")) {
-        // Remove all non-alphanumeric characters
-        word.replaceAll(/[^a-zA-Z0-9]/g, "");
-
-        mentions.push(word);
+        mentions.push(word.replace(/[^a-zA-Z0-9@]/g, ""));
       }
     }
 
@@ -184,14 +177,13 @@ export class Status {
 
   private static parseNewlines(post: string): PostSegment[] {
     const newlines: PostSegment[] = [];
-
     const regex = /\n/g;
 
     let match;
     while ((match = regex.exec(post)) !== null) {
-      const matchIndex = match.index;
+      const index = match.index;
       newlines.push(
-        new PostSegment("\n", matchIndex, matchIndex + 1, Type.newline)
+        new PostSegment("\n", index, index + 1, Type.newline)
       );
     }
 
@@ -218,13 +210,12 @@ export class Status {
     return this._timestamp;
   }
 
-  public get formattedDate(): string {
-    let date: Date = new Date(this.timestamp);
-    return format(date, "MMMM dd, yyyy HH:mm:ss");
-  }
-
   public set timestamp(value: number) {
     this._timestamp = value;
+  }
+
+  public get formattedDate(): string {
+    return format(new Date(this.timestamp), "MMMM dd, yyyy HH:mm:ss");
   }
 
   public get segments(): PostSegment[] {
@@ -237,6 +228,7 @@ export class Status {
 
   public equals(other: Status): boolean {
     return (
+      this._id === other._id &&
       this._user.equals(other.user) &&
       this._timestamp === other._timestamp &&
       this._post === other.post
@@ -245,30 +237,20 @@ export class Status {
 
   public static fromJson(json: string | null | undefined): Status | null {
     if (!!json) {
-      const jsonObject: {
-        _post: string;
-        _user: {
-          _firstName: string;
-          _lastName: string;
-          _alias: string;
-          _imageUrl: string;
-        };
-        _timestamp: number;
-        _segments: PostSegment[];
-      } = JSON.parse(json);
+      const obj = JSON.parse(json);
       return new Status(
-        jsonObject._post,
+        obj._id,
+        obj._post,
         new User(
-          jsonObject._user._firstName,
-          jsonObject._user._lastName,
-          jsonObject._user._alias,
-          jsonObject._user._imageUrl
+          obj._user._firstName,
+          obj._user._lastName,
+          obj._user._alias,
+          obj._user._imageUrl
         ),
-        jsonObject._timestamp
+        obj._timestamp
       );
-    } else {
-      return null;
     }
+    return null;
   }
 
   public toJson(): string {

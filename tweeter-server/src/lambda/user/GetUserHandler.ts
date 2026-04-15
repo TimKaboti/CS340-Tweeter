@@ -1,5 +1,5 @@
 import { UserRequest } from "tweeter-shared";
-import { UserService } from "../../model/service/UserService";
+import { UserService } from "../../service/UserService";
 
 export const handler = async (event: any) => {
     try {

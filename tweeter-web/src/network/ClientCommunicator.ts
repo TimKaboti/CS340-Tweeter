@@ -27,6 +27,11 @@ export class ClientCommunicator {
             req ? JSON.stringify(req) : undefined
         );
 
+        console.log("POST REQUEST", {
+            url,
+            request: req,
+        });
+
         try {
             const resp: Response = await fetch(url, params);
 
@@ -35,7 +40,7 @@ export class ClientCommunicator {
                 return response;
             } else {
                 const error = await resp.json();
-                throw new Error(error.errorMessage);
+                throw new Error(error.errorMessage ?? error.message ?? "Request failed");
             }
         } catch (error) {
             throw new Error(

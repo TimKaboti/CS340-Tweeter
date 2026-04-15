@@ -1,5 +1,5 @@
 import { CountRequest } from "tweeter-shared";
-import { FollowService } from "../../model/service/FollowService";
+import { FollowService } from "../../service/FollowService";
 
 export const handler = async (event: any) => {
     try {
@@ -27,7 +27,7 @@ export const handler = async (event: any) => {
         const response = await service.getFolloweeCount(request);
 
         return {
-            statusCode: 200,
+            statusCode: response.success ? 200 : 400,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify(response),
         };

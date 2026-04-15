@@ -7,11 +7,14 @@
         "build": "tsc"
     },
     "dependencies": {
+        "@aws-sdk/client-sqs": "^3.1029.0",
+        "bcryptjs": "^3.0.3",
         "date-fns": "^4.1.0",
-        "tweeter-shared": "file:../tweeter-shared",
-        "uuid": "^13.0.0"
+        "tweeter-shared": "file:../tweeter-shared/tweeter-shared-0.0.0.tgz",
+        "uuid": "^8.3.2"
     },
     "devDependencies": {
+        "@types/aws-lambda": "^8.10.161",
         "typescript": "^5.0.0"
     }
 }

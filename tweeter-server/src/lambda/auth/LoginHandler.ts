@@ -1,5 +1,5 @@
 import { LoginRequest } from "tweeter-shared";
-import { AuthService } from "../../model/service/AuthService";
+import { AuthService } from "../../service/AuthService";
 
 export const handler = async (event: any) => {
     try {
@@ -27,7 +27,7 @@ export const handler = async (event: any) => {
         const response = await service.login(request);
 
         return {
-            statusCode: 200,
+            statusCode: response.success ? 200 : 401,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify(response),
         };

@@ -121,12 +121,27 @@ const Register = () => {
     const imageStringBase64: string =
       Buffer.from(userImageBytes).toString("base64");
 
+    console.log("REGISTER DEBUG", {
+      firstName,
+      lastName,
+      alias,
+      password,
+      imageFileExtension,
+      imageBytesLength: userImageBytes.length,
+      base64Length: imageStringBase64.length,
+      base64Preview: imageStringBase64.substring(0, 50),
+    });
+
+    console.log("imageBytesLength =", userImageBytes.length);
+    console.log("base64Length =", imageStringBase64.length);
+    console.log("base64Preview =", imageStringBase64.substring(0, 50));
+
     return authService.register(
       firstName,
       lastName,
       alias,
       password,
-      imageFileExtension
+      imageStringBase64
     );
   };
 

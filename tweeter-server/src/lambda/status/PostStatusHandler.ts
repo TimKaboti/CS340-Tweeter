@@ -1,5 +1,5 @@
 import { PostStatusRequest } from "tweeter-shared";
-import { StatusService } from "../../model/service/StatusService";
+import { StatusService } from "../../service/StatusService";
 
 export const handler = async (event: any) => {
     try {
@@ -11,7 +11,17 @@ export const handler = async (event: any) => {
             };
         }
 
-        const request: PostStatusRequest = JSON.parse(event.body);
+        let request: PostStatusRequest;
+
+        try {
+            request = JSON.parse(event.body);
+        } catch {
+            return {
+                statusCode: 400,
+                headers: { "Access-Control-Allow-Origin": "*" },
+                body: JSON.stringify({ errorMessage: "Request body must be valid JSON" }),
+            };
+        }
 
         if (!request.token || !request.newStatus) {
             return {
@@ -27,7 +37,7 @@ export const handler = async (event: any) => {
         const response = await service.postStatus(request);
 
         return {
-            statusCode: 200,
+            statusCode: response.success ? 200 : 400,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify(response),
         };

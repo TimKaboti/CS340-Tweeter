@@ -1,5 +1,5 @@
 import { PagedUserItemRequest } from "tweeter-shared";
-import { FollowService } from "../../model/service/FollowService";
+import { FollowService } from "../../service/FollowService";
 
 export const handler = async (event: any) => {
     try {
@@ -12,13 +12,14 @@ export const handler = async (event: any) => {
         }
 
         const request: PagedUserItemRequest = JSON.parse(event.body);
-
+        console.log("GET_FOLLOWEES_HANDLER_RUNNING", request);
+        
         if (!request.token || !request.userAlias || !request.pageSize) {
             return {
                 statusCode: 400,
                 headers: { "Access-Control-Allow-Origin": "*" },
                 body: JSON.stringify({
-                    errorMessage: "Missing token, userAlias, or pageSize",
+                    errorMessage: "Missing required followee fields",
                 }),
             };
         }
@@ -27,7 +28,7 @@ export const handler = async (event: any) => {
         const response = await service.getFollowees(request);
 
         return {
-            statusCode: 200,
+            statusCode: response.success ? 200 : 400,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify(response),
         };

@@ -11,17 +11,17 @@ interface Props {
 }
 
 const UserInfoProvider: React.FC<Props> = ({ children }) => {
-  const saveToLocalStorage = (
+  const saveToSessionStorage = (
     currentUser: User,
     authToken: AuthToken
   ): void => {
-    localStorage.setItem(CURRENT_USER_KEY, currentUser.toJson());
-    localStorage.setItem(AUTH_TOKEN_KEY, authToken.toJson());
+    sessionStorage.setItem(CURRENT_USER_KEY, currentUser.toJson());
+    sessionStorage.setItem(AUTH_TOKEN_KEY, authToken.toJson());
   };
 
-  const retrieveFromLocalStorage = (): UserInfo => {
-    const loggedInUser = User.fromJson(localStorage.getItem(CURRENT_USER_KEY));
-    const authToken = AuthToken.fromJson(localStorage.getItem(AUTH_TOKEN_KEY));
+  const retrieveFromSessionStorage = (): UserInfo => {
+    const loggedInUser = User.fromJson(sessionStorage.getItem(CURRENT_USER_KEY));
+    const authToken = AuthToken.fromJson(sessionStorage.getItem(AUTH_TOKEN_KEY));
 
     if (!!loggedInUser && !!authToken) {
       return {
@@ -34,13 +34,13 @@ const UserInfoProvider: React.FC<Props> = ({ children }) => {
     }
   };
 
-  const clearLocalStorage = (): void => {
-    localStorage.removeItem(CURRENT_USER_KEY);
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+  const clearSessionStorage = (): void => {
+    sessionStorage.removeItem(CURRENT_USER_KEY);
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
   };
 
   const [userInfo, setUserInfo] = useState({
-    ...retrieveFromLocalStorage(),
+    ...retrieveFromSessionStorage(),
   });
 
   const updateUserInfo = useCallback(
@@ -59,7 +59,7 @@ const UserInfoProvider: React.FC<Props> = ({ children }) => {
       });
 
       if (remember) {
-        saveToLocalStorage(currentUser, authToken);
+        saveToSessionStorage(currentUser, authToken);
       }
     },
     []
@@ -74,7 +74,7 @@ const UserInfoProvider: React.FC<Props> = ({ children }) => {
       };
     });
 
-    clearLocalStorage();
+    clearSessionStorage();
   }, []);
 
   const setDisplayedUser = useCallback((user: User) => {

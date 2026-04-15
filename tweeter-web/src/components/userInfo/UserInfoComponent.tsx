@@ -237,8 +237,8 @@ const UserInfo = () => {
                 <p id="returnToLoggedInUser">
                   Return to{" "}
                   <Link
-                    to={`./${currentUser.alias}`}
-                    onClick={switchToLoggedInUser}
+                    to={`/${currentUser.alias}`}
+                    onClick={() => setDisplayedUser(currentUser)}
                   >
                     logged in user
                   </Link>

@@ -20,14 +20,14 @@ export default class AuthService {
         lastName: string,
         alias: string,
         password: string,
-        imageUrl: string
+        userImageBase64: string
     ): Promise<[User, AuthToken]> {
         const request = new RegisterRequest(
             firstName,
             lastName,
             alias,
             password,
-            imageUrl
+            userImageBase64
         );
 
         return this.serverFacade.register(request);

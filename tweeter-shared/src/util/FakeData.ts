@@ -109,7 +109,12 @@ export class FakeData {
         Or do you prefer this one: http://cs.byu.edu?`;
         const timestamp =
           timestampStart + 30000000000 * (i * this.fakeUsers.length + j);
-        const status = new Status(post, sender, timestamp);
+        const status = new Status(
+          `${sender.alias}-${timestamp}`,
+          post,
+          sender,
+          timestamp
+        );
         this.allStatuses.push(status);
       }
     }

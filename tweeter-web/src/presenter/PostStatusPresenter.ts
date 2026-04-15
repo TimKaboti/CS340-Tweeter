@@ -6,7 +6,7 @@ export interface PostStatusView {
   clearPost(): void;
   showInfo(message: string, durationMs: number): void;
   showError(message: string, durationMs: number): void;
-  showPersistentInfo(message: string): string; 
+  showPersistentInfo(message: string): string;
   dismissToast(id: string): void;
 }
 
@@ -20,7 +20,7 @@ export default class PostStatusPresenter {
   }
 
   protected get statusService(): StatusService {
-  return this.service;
+    return this.service;
   }
 
   public canPost(postText: string, authToken: AuthToken | null, currentUser: User | null): boolean {
@@ -34,8 +34,7 @@ export default class PostStatusPresenter {
       this.view.setLoading(true);
       toastId = this.view.showPersistentInfo("Posting status...");
 
-      const status = new Status(postText, currentUser, Date.now());
-      await this.statusService.postStatus(authToken, status);
+      const status = new Status("", postText, currentUser, Date.now()); await this.statusService.postStatus(authToken, status);
 
       this.view.clearPost();
       this.view.showInfo("Status posted!", 2000);

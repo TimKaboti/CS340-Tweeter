@@ -19,42 +19,53 @@ import FollowersPresenter from "./presenter/FollowersPresenter";
 import FeedPresenter from "./presenter/FeedPresenter";
 import StoryPresenter from "./presenter/StoryPresenter";
 import { User, Status } from "tweeter-shared";
-import PagedItemPresenter, { PagedItemView } from "./presenter/PagedItemPresenter";
+import PagedItemPresenter, {
+  PagedItemView,
+} from "./presenter/PagedItemPresenter";
 import UserItem from "./components/userItem/UserItem";
 import StatusItem from "./components/statusItem/StatusItem";
 import useUserNavigation from "./hooks/useUserNavigation";
-
-
 
 const userItemComponentGenerator = (featurePath: string) => (user: User) =>
   <UserItem user={user} featurePath={featurePath} />;
 
 type FeaturePath = "/feed" | "/story" | "/followers" | "/followees";
 
+/**
+ * Clicking a user in a status should always take the app to that user's story,
+ * not to /feed/:alias. A feed route is for the logged-in user's feed, while a
+ * user's story/profile route is the right place to navigate when selecting a user.
+ */
 const statusItemComponentGenerator =
-  (featurePath: FeaturePath, onNavigateToUser: (e: React.MouseEvent) => Promise<void>) =>
-  (status: Status) =>
+  (
+    featurePath: FeaturePath,
+    onNavigateToUser: (e: React.MouseEvent) => Promise<void>
+  ) =>
+    (status: Status) =>
     (
       <StatusItem
         status={status}
-        linkTo={`${featurePath}/${status.user.alias}`} 
+        linkTo={`/story/${status.user.alias}`}
         featurePath={featurePath}
         onNavigateToUser={onNavigateToUser}
       />
     );
-    
 
-const followeesPresenterFactory = (view: PagedItemView<User>): PagedItemPresenter<User> =>
-  new FolloweesPresenter(view as any);
+const followeesPresenterFactory = (
+  view: PagedItemView<User>
+): PagedItemPresenter<User> => new FolloweesPresenter(view as any);
 
-const followersPresenterFactory = (view: PagedItemView<User>): PagedItemPresenter<User> =>
-  new FollowersPresenter(view as any);
+const followersPresenterFactory = (
+  view: PagedItemView<User>
+): PagedItemPresenter<User> => new FollowersPresenter(view as any);
 
-const feedPresenterFactory = (view: PagedItemView<Status>): PagedItemPresenter<Status> =>
-  new FeedPresenter(view as any);
+const feedPresenterFactory = (
+  view: PagedItemView<Status>
+): PagedItemPresenter<Status> => new FeedPresenter(view as any);
 
-const storyPresenterFactory = (view: PagedItemView<Status>): PagedItemPresenter<Status> =>
-  new StoryPresenter(view as any);
+const storyPresenterFactory = (
+  view: PagedItemView<Status>
+): PagedItemPresenter<Status> => new StoryPresenter(view as any);
 
 const App = () => {
   const { currentUser, authToken } = useContext(UserInfoContext);
@@ -79,12 +90,11 @@ const App = () => {
 
 const PAGE_SIZE = 10;
 
-
 const FeedRoute = () => {
   const { authToken } = useContext(UserInfoContext);
-  const { displayedUser } = useParams(); // this is the URL segment after /feed/
+  const { displayedUser } = useParams();
 
-  const { navigateToUser } = useUserNavigation("/feed"); // ✅ real handler
+  const { navigateToUser } = useUserNavigation("/story");
 
   return (
     <ItemScroller<Status>
@@ -92,16 +102,19 @@ const FeedRoute = () => {
       userOrAlias={displayedUser!}
       pageSize={PAGE_SIZE}
       presenterFactory={feedPresenterFactory}
-      itemComponentGenerator={statusItemComponentGenerator("/feed", navigateToUser)}
+      itemComponentGenerator={statusItemComponentGenerator(
+        "/feed",
+        navigateToUser
+      )}
     />
   );
 };
 
 const StoryRoute = () => {
   const { authToken } = useContext(UserInfoContext);
-  const { displayedUser} = useParams();
+  const { displayedUser } = useParams();
 
-  const { navigateToUser } = useUserNavigation("/story"); // ✅ real handler
+  const { navigateToUser } = useUserNavigation("/story");
 
   return (
     <ItemScroller<Status>
@@ -109,11 +122,13 @@ const StoryRoute = () => {
       userOrAlias={displayedUser!}
       pageSize={PAGE_SIZE}
       presenterFactory={storyPresenterFactory}
-      itemComponentGenerator={statusItemComponentGenerator("/story", navigateToUser)}
+      itemComponentGenerator={statusItemComponentGenerator(
+        "/story",
+        navigateToUser
+      )}
     />
   );
 };
-
 
 const FolloweesRoute = () => {
   const { authToken } = useContext(UserInfoContext);
@@ -122,7 +137,7 @@ const FolloweesRoute = () => {
   return (
     <ItemScroller<User>
       authToken={authToken!}
-      userOrAlias={displayedUser!} // ✅ string from URL
+      userOrAlias={displayedUser!}
       pageSize={PAGE_SIZE}
       presenterFactory={followeesPresenterFactory}
       itemComponentGenerator={userItemComponentGenerator("/followees")}
@@ -132,19 +147,18 @@ const FolloweesRoute = () => {
 
 const FollowersRoute = () => {
   const { authToken } = useContext(UserInfoContext);
-  const { displayedUser } = useParams(); // "@amy"
+  const { displayedUser } = useParams();
 
   return (
     <ItemScroller<User>
       authToken={authToken!}
-      userOrAlias={displayedUser!} // ✅ string from URL
+      userOrAlias={displayedUser!}
       pageSize={PAGE_SIZE}
       presenterFactory={followersPresenterFactory}
       itemComponentGenerator={userItemComponentGenerator("/followers")}
     />
   );
 };
-
 
 const AuthenticatedRoutes = () => {
   const { displayedUser } = useContext(UserInfoContext);

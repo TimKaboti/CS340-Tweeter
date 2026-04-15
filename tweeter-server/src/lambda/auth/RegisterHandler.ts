@@ -1,5 +1,5 @@
 import { RegisterRequest } from "tweeter-shared";
-import { AuthService } from "../../model/service/AuthService";
+import { AuthService } from "../../service/AuthService";
 
 export const handler = async (event: any) => {
     try {
@@ -12,13 +12,22 @@ export const handler = async (event: any) => {
         }
 
         const request: RegisterRequest = JSON.parse(event.body);
+        console.log("REGISTER REQUEST:", request);
+        console.log("FIELD CHECKS:", {
+            firstName: !!request.firstName,
+            lastName: !!request.lastName,
+            alias: !!request.alias,
+            password: !!request.password,
+            userImageBase64: !!request.userImageBase64,
+            userImageBase64Length: request.userImageBase64?.length,
+        });
 
         if (
             !request.firstName ||
             !request.lastName ||
             !request.alias ||
             !request.password ||
-            !request.imageUrl
+            !request.userImageBase64
         ) {
             return {
                 statusCode: 400,
@@ -33,7 +42,7 @@ export const handler = async (event: any) => {
         const response = await service.register(request);
 
         return {
-            statusCode: 200,
+            statusCode: response.success ? 200 : 400,
             headers: { "Access-Control-Allow-Origin": "*" },
             body: JSON.stringify(response),
         };

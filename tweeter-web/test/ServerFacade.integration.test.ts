@@ -1,59 +1,70 @@
-import "isomorphic-fetch";
+import { anything, instance, mock, spy, verify, when } from "@typestrong/ts-mockito";
+import { AuthToken, User } from "tweeter-shared";
 
-import {
-  CountRequest,
-  PagedUserItemRequest,
-  RegisterRequest,
-  User,
-} from "tweeter-shared";
-import { ServerFacade } from "../src/network/ServerFacade";
+import PostStatusPresenter, { PostStatusView } from "../src/presenter/PostStatusPresenter";
+import StatusService from "../src/service/StatusService";
 
-describe("ServerFacade integration tests", () => {
-  const serverFacade = new ServerFacade();
+describe("PostStatusPresenter", () => {
+  let mockView: PostStatusView;
+  let view: PostStatusView;
 
-  test("register returns the registered user data and an auth token", async () => {
-  const request = new RegisterRequest(
-    "Ty",
-    "Tanner",
-    "@ty",
-    "password",
-    "https://picsum.photos/200"
-  );
+  let mockService: StatusService;
+  let service: StatusService;
 
-  const [user, authToken] = await serverFacade.register(request);
+  let presenterSpy: PostStatusPresenter;
+  let presenter: PostStatusPresenter;
 
-  expect(user).not.toBeNull();
-  expect(authToken).not.toBeNull();
+  const authToken = new AuthToken("token", Date.now());
+  const currentUser = new User("Bob", "Barker", "@bob", "img");
+  const postText = "Hello world";
 
-  expect(user.firstName).toBe("Ty");
-  expect(user.lastName).toBe("Tanner");
-  expect(user.alias).toBe("@ty");
+  beforeEach(() => {
+    mockView = mock<PostStatusView>();
+    view = instance(mockView);
 
-  expect(authToken.token).toBeDefined();
-  expect(authToken.token.length).toBeGreaterThan(0);
-});
+    mockService = mock<StatusService>();
+    service = instance(mockService);
 
-  test("getMoreFollowers returns at least one follower", async () => {
-    const request = new PagedUserItemRequest(
-      "abc123",
-      "@allen",
-      10,
-      null
-    );
+    presenterSpy = spy(new PostStatusPresenter(view));
+    presenter = instance(presenterSpy);
 
-    const [followers, hasMore] = await serverFacade.getMoreFollowers(request);
+    when((presenterSpy as any).statusService).thenReturn(service);
 
-    expect(followers).not.toBeNull();
-    expect(followers.length).toBeGreaterThan(0);
-    expect(followers[0]).toBeInstanceOf(User);
-    expect(typeof hasMore).toBe("boolean");
+    when(mockView.showPersistentInfo("Posting status...")).thenReturn("toast-1");
   });
 
-  test("getFolloweeCount returns a value greater than zero", async () => {
-    const request = new CountRequest("abc123", "@allen");
+  it("The presenter tells the view to display a posting status message.", async () => {
+    await presenter.submitPost(postText, authToken, currentUser);
+    verify(mockView.showPersistentInfo("Posting status...")).once();
+  });
 
-    const count = await serverFacade.getFolloweeCount(request);
+  it("The presenter calls postStatus on the service with the correct status string and auth token.", async () => {
+    await presenter.submitPost(postText, authToken, currentUser);
 
-    expect(count).toBeGreaterThan(0);
+    verify(mockService.postStatus(authToken, anything())).once();
+  });
+
+  it("When posting is successful, the presenter clears the post and displays a status posted message.", async () => {
+    await presenter.submitPost(postText, authToken, currentUser);
+
+    verify(mockView.clearPost()).once();
+    verify(mockView.showInfo("Status posted!", 2000)).once();
+
+    verify(mockView.dismissToast("toast-1")).once();
+    verify(mockView.setLoading(false)).once();
+  });
+
+  it("When posting is not successful, the presenter clears the info message and displays an error but does not clear post or show status posted.", async () => {
+    when(mockService.postStatus(anything(), anything())).thenThrow(new Error("boom"));
+
+    await presenter.submitPost(postText, authToken, currentUser);
+
+    verify(mockView.showError("Failed to post the status because of exception: boom", 0)).once();
+
+    verify(mockView.clearPost()).never();
+    verify(mockView.showInfo("Status posted!", anything())).never();
+
+    verify(mockView.dismissToast("toast-1")).once();
+    verify(mockView.setLoading(false)).once();
   });
 });

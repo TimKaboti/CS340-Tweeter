@@ -6,6 +6,6 @@ export class RegisterRequest implements TweeterRequest {
         public lastName: string,
         public alias: string,
         public password: string,
-        public imageUrl: string
+        public userImageBase64: string
     ) { }
 }

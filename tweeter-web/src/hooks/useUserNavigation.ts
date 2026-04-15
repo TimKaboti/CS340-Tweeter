@@ -21,7 +21,7 @@ const useUserNavigation = (featurePath: FeaturePath) => {
   const userService = new UserService();
 
   useEffect(() => {
-    if (!authToken || !displayedUserAliasParam) return;
+    if (!authToken || !displayUserAliasParamSafe(displayedUserAliasParam)) return;
 
     if (!displayedUser || displayedUserAliasParam !== displayedUser.alias) {
       getUser(authToken, displayedUserAliasParam).then((toUser) => {
@@ -38,9 +38,13 @@ const useUserNavigation = (featurePath: FeaturePath) => {
     return userService.getUser(authToken, alias);
   };
 
-  const extractAlias = (value: string): string => {
-    const index = value.indexOf("@");
-    return value.substring(index);
+  const displayUserAliasParamSafe = (alias: string | undefined): alias is string => {
+    return !!alias && alias.trim().length > 0;
+  };
+
+  const normalizeAlias = (alias: string): string => {
+    const trimmed = alias.trim();
+    return trimmed.startsWith("@") ? trimmed.substring(1) : trimmed;
   };
 
   const navigateToUser = async (event: React.MouseEvent): Promise<void> => {
@@ -49,7 +53,14 @@ const useUserNavigation = (featurePath: FeaturePath) => {
     try {
       if (!authToken || !displayedUser) return;
 
-      const alias = extractAlias(event.target.toString());
+      const target = event.currentTarget as HTMLAnchorElement;
+      const aliasText = target.textContent ?? "";
+      const alias = normalizeAlias(aliasText);
+
+      if (!alias) {
+        throw new Error("Invalid user alias");
+      }
+
       const toUser = await getUser(authToken, alias);
 
       if (toUser && !toUser.equals(displayedUser)) {
